@@ -1,0 +1,7 @@
+}
+	a.exe -> c.c;
+	a.exe -> d.d;
+	b.out -> c.c;
+	b.out -> d.d;
+digraph depgraph {
+	e.e -> f.f;
