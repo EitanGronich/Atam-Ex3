@@ -1,2 +1,0 @@
-make: Circular b <- a dependency dropped.
-make: Nothing to be done for 'a'.

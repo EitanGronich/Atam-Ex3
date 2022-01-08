@@ -1,4 +1,5 @@
 Usage:
+First compile your source code via the instructions in the exercise. Then:
 chmod +x test.sh
 ./test.sh
 

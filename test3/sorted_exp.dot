@@ -1,5 +1,0 @@
-}
-digraph depgraph {
-	main.out -> obj1.o;
-	main.out -> obj2.o;
-	main.out -> obj3.o;
