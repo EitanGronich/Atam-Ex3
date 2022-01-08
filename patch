@@ -1,0 +1,139 @@
+diff -Naur source-orig/src/file.c source-new/src/file.c
+--- source-orig/src/file.c	2020-01-19 20:32:59.000000000 +0000
++++ source-new/src/file.c	2022-01-08 06:57:23.056435731 +0000
+@@ -62,6 +62,9 @@
+ /* Whether or not .SECONDARY with no prerequisites was given.  */
+ static int all_secondary = 0;
+ 
++/* File to print dep graph to */
++static FILE* depfile_f;
++
+ /* Access the hash table of all file records.
+    lookup_file  given a name, return the struct file * for that name,
+                 or nil if there is none.
+@@ -1109,6 +1112,37 @@
+   fputs (_("\n# files hash-table stats:\n# "), stdout);
+   hash_print_stats (&files, stdout);
+ }
++
++static void
++print_file_depgraph (const void *item)
++{
++  const struct file *f = item;
++
++  /* If we're not using builtin targets, don't show them.
++
++     Ideally we'd be able to delete them altogether but currently there's no
++     facility to ever delete a file once it's been added.  */
++  if (no_builtin_rules_flag && f->builtin)
++    return;
++  
++  if (f->is_target) {
++	  for (struct dep* cur = f->deps; cur != NULL; cur = cur->next) {
++			fprintf(depfile_f, "\t%s -> %s;\n", f->name, cur->file->name);
++	 }
++  }
++}
++
++void
++print_depgraph (FILE* f)
++{
++  fprintf(f, "digraph depgraph {\n");
++  depfile_f = f;
++
++  hash_map (&files, print_file_depgraph);
++
++  fprintf(f, "}\n");
++}
++
+ 
+ /* Verify the integrity of the data base of files.  */
+ 
+diff -Naur source-orig/src/filedef.h source-new/src/filedef.h
+--- source-orig/src/filedef.h	2020-01-03 07:11:27.000000000 +0000
++++ source-new/src/filedef.h	2022-01-01 17:30:49.990612320 +0000
+@@ -127,6 +127,7 @@
+ char *build_target_list (char *old_list);
+ void print_prereqs (const struct dep *deps);
+ void print_file_data_base (void);
++void print_depgraph(FILE* f);
+ int try_implicit_rule (struct file *file, unsigned int depth);
+ int stemlen_compare (const void *v1, const void *v2);
+ 
+diff -Naur source-orig/src/main.c source-new/src/main.c
+--- source-orig/src/main.c	2020-01-19 20:32:59.000000000 +0000
++++ source-new/src/main.c	2022-01-08 09:38:51.995686897 +0000
+@@ -242,6 +242,10 @@
+ 
+ static struct stringlist *makefiles = 0;
+ 
++/* Dependency file given with -D or --gen-depgraph switch */
++
++static struct stringlist* depfiles = 0;
++
+ /* Size of the stack when we started.  */
+ 
+ #ifdef SET_STACK_SIZE
+@@ -343,6 +347,9 @@
+     N_("\
+   -d                          Print lots of debugging information.\n"),
+     N_("\
++  -D --gen-depgraph=filename\n\
++							  Print a .dot dependency graph to filename.\n"),
++    N_("\
+   --debug[=FLAGS]             Print various types of debugging information.\n"),
+     N_("\
+   -e, --environment-overrides\n\
+@@ -443,6 +450,7 @@
+     /* These options take arguments.  */
+     { 'C', filename, &directories, 0, 0, 0, 0, 0, "directory" },
+     { 'f', filename, &makefiles, 0, 0, 0, 0, 0, "file" },
++	{ 'D', filename, &depfiles, 0, 0, 0, 0, 0, "gen-depgraph"},
+     { 'I', filename, &include_directories, 1, 1, 0, 0, 0,
+       "include-dir" },
+     { 'j', positive_int, &arg_job_slots, 1, 1, 0, &inf_jobs, &default_job_slots,
+@@ -1943,7 +1951,7 @@
+   /* Read all the makefiles.  */
+ 
+   read_files = read_all_makefiles (makefiles == 0 ? 0 : makefiles->list);
+-
++ 
+ #ifdef WINDOWS32
+   /* look one last time after reading all Makefiles */
+   if (no_default_sh_exe)
+@@ -2193,7 +2201,7 @@
+         struct goaldep *d;
+         unsigned int num_mkfiles = 0;
+         for (d = read_files; d != NULL; d = d->next)
+-          ++num_mkfiles;
++		   ++num_mkfiles;
+ 
+         makefile_mtimes = alloca (num_mkfiles * sizeof (FILE_TIMESTAMP));
+       }
+@@ -2520,6 +2528,16 @@
+      it now.  */
+   if (stdin_nm && unlink (stdin_nm) < 0 && errno != ENOENT)
+     perror_with_name (_("unlink (temporary file): "), stdin_nm);
++  
++  if (depfiles != 0) {
++	FILE* depfile_f = fopen(depfiles->list[0], "w");
++	if (depfile_f) {
++		print_depgraph(depfile_f);
++		fclose(depfile_f);
++	   }
++	} 
++
++  
+ 
+   /* If there were no command-line goals, use the default.  */
+   if (goals == 0)
+@@ -2580,7 +2598,8 @@
+ 
+       O (fatal, NILF, _("No targets specified and no makefile found"));
+     }
+-
++    
++    
+   /* Update the goals.  */
+ 
+   DB (DB_BASIC, (_("Updating goal targets....\n")));
