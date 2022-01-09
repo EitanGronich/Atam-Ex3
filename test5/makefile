@@ -1,5 +1,13 @@
-#Multiple targets on same line + unrelated target
+# All together
 
-a.exe b.out: c.c d.d
+PROG = main.out
+OBJS = obj1.o obj2.o obj3.o
 
-e.e: f.f
+#Nothing should be written for all
+all:
+
+a b: c d
+
+$(PROG): $(OBJS)
+
+e: f

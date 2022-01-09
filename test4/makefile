@@ -1,5 +1,5 @@
-# Cycle
+#Multiple targets on same line + unrelated target
 
-a: b
+a.exe b.out: c.c d.d
 
-b: a
+e.e: f.f

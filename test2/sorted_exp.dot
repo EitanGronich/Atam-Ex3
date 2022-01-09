@@ -1,0 +1,6 @@
+}
+	a -> b.o;
+	a -> c.o;
+	b.o -> c.o;
+digraph depgraph {
+	e -> f.o;
