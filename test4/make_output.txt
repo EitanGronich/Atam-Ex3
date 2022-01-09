@@ -1,1 +1,0 @@
-make: *** No rule to make target 'c.c', needed by 'a.exe'.  Stop.
