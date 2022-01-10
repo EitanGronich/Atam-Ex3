@@ -4,6 +4,7 @@ FAILED=0
 RED='\033[1;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
+MAKE_PATH=~/make/root/bin/make
 
 for i in $(eval echo {1..$MAX_TESTS})
 	do
@@ -11,7 +12,7 @@ for i in $(eval echo {1..$MAX_TESTS})
 			then
 				cd test$i
 				echo -n Test $i...
-				~/make/root/bin/make --gen-depgraph=out.dot > make_output.txt 2>&1
+				$MAKE_PATH --gen-depgraph=out.dot > make_output.txt 2>&1
 				sort out.dot > sorted_out.dot
 				sort exp.dot > sorted_exp.dot
 				diff sorted_out.dot sorted_exp.dot > diff.txt
@@ -42,7 +43,7 @@ cd ./tmp/test1
 rm *.dot
 
 echo -n "Testing with flag not given..."
-~/make/root/bin/make > /dev/null 2>&1
+$MAKE_PATH > /dev/null 2>&1
 if [ -e *.dot ]
 	then
 		echo -e "${RED}FAILED - your program creates a .dot when it shouldn't${NC}"
@@ -53,7 +54,7 @@ fi
 echo -n "Testing overwrite existing .dot file..."
 touch out.dot
 echo "Linus" > out.dot
-~/make/root/bin/make --gen-depgraph=out.dot > /dev/null 2>&1
+$MAKE_PATH --gen-depgraph=out.dot > /dev/null 2>&1
 grep -q "Linus" out.dot
 if [ $? -eq 0 ]
 	then
@@ -64,7 +65,7 @@ fi
 
 echo -n "Testing fail to create .dot file..."
 rm a b c
-~/make/root/bin/make --gen-depgraph=./notexist/a.dot > /dev/null 2>&1
+$MAKE_PATH --gen-depgraph=./notexist/a.dot > /dev/null 2>&1
 MAKERET=$?
 cat a b c > /dev/null
 if [ $? -eq 0 ] && [ $MAKERET -eq 0 ]
